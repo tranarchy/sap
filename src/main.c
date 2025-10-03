@@ -1,7 +1,9 @@
 #include <pwd.h>
+#include <math.h>
 #include <stdio.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <sys/stat.h>
 
 #include <SDL2/SDL.h>
