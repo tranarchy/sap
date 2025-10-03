@@ -31,17 +31,12 @@ static int queue_count = 0;
 static int queue_selected = 0;
 
 static int shuffle = 0;
-static int prev_rand = -1;
 
 static mu_Color color;
 
 static void music_finished(void) {
     if (shuffle) {
-     do {
       queue_selected = rand() % queue_count;
-     } while (queue_selected == prev_rand && queue_count > 1);
-    
-     prev_rand = queue_selected;
     } else {
       if (queue_selected + 1 < queue_count) {
         queue_selected++;
@@ -161,9 +156,16 @@ static void remove_from_queue(char *music_path) {
     }
 
     queue_count--;
-   
+
     if (removed_idx == queue_selected) {
-      music_finished();
+      if (queue_selected == queue_count) {
+        music_finished();
+      } else {
+        music = Mix_LoadMUS(queue[queue_selected]);
+        Mix_PlayMusic(music, 1);
+      }
+    } else if (removed_idx < queue_selected) {
+      queue_selected--;
     }
 }
 
