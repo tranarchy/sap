@@ -455,7 +455,7 @@ int main(int argc, char **argv) {
   struct stat source_stat;
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-  Mix_OpenAudio(48000, MIX_DEFAULT_FORMAT, 1, 1024);
+  Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
   Mix_HookMusicFinished(music_finished);
   Mix_SetPostMix(music_hook, NULL);
   gl_init();
