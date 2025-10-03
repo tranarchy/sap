@@ -22,7 +22,7 @@ static int buf_idx;
 void gl_init(void) {
    window = SDL_CreateWindow(
     "sap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-    800, 700, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    800, 700, SDL_WINDOW_OPENGL);
   SDL_GL_CreateContext(window);
 
   gladLoadGL();
