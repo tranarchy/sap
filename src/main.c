@@ -200,9 +200,21 @@ static void get_tracks(mu_Context *ctx, char *dir_path) {
              Mix_Music *temp_music = Mix_LoadMUS(abs_entry_name);
              truncate_text(ctx, entry->d_name);
              if (temp_music != NULL) {
+                bool duplicate = false;
+             
                 mu_layout_row(ctx, 2, (int[]) { text_width(NULL, entry->d_name, -1) + 5, -1 }, 0);
                 if (mu_button(ctx, entry->d_name) || add_dir) {
-                  add_to_queue(abs_entry_name);
+                
+                  for (int i = 0; i < queue_count; i++) {
+                    if (strcmp(queue[i], abs_entry_name) == 0) {
+                      duplicate = true;
+                      break;
+                    }
+                  }
+
+                  if (!duplicate) {
+                    add_to_queue(abs_entry_name);
+                  }
                 }
              }
              Mix_FreeMusic(temp_music);
