@@ -45,4 +45,5 @@ When you drag and drop an audio file into `sap` it will add it to the queue
 - DOWN ARROW - decrease volume
 
 Middle clicking on entries in the queue will delete them
+
 Right clicking on a dropped down dir in the File selection window will add the entire dir's content to the queue
