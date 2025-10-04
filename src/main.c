@@ -22,7 +22,7 @@ static char music_dir[1024];
 
 static Mix_Music *music = NULL;
 static float music_pos = 0;
-static float volume = MIX_MAX_VOLUME;
+static unsigned char volume = MIX_MAX_VOLUME;
 
 static float dBFS_data[VISUALIZER_BARS] = { MIN_DBFS };
 
@@ -418,7 +418,7 @@ static void settings_window(mu_Context *ctx) {
     mu_layout_row(ctx, 2, (int[]) { 70, 150 }, 0);
     mu_label(ctx, "Volume");
 
-    if (mu_slider(ctx, &volume, 0, MIX_MAX_VOLUME)) {
+    if (uint8_slider(ctx, &volume, 0, MIX_MAX_VOLUME)) {
       Mix_VolumeMusic(volume);
     }
 
@@ -507,6 +507,8 @@ int main(int argc, char **argv) {
   if (ret == -1) {
     mkdir(music_dir, 16877);
   }
+
+  puts(getenv("PATH"));
  
   for (;;) {
     SDL_Event e;
