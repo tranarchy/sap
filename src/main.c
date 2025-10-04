@@ -239,9 +239,9 @@ static void player_window(mu_Context *ctx) {
         
         snprintf(currently_plaing, 2048, "%s (%d / %d)", stripped_file, queue_selected + 1, queue_count);
         truncate_text(ctx, currently_plaing);
-        
-        mu_label(ctx, currently_plaing);
 
+        mu_draw_control_text(ctx, currently_plaing, mu_layout_next(ctx), MU_COLOR_TEXT, MU_OPT_ALIGNCENTER);
+        
         free(stripped_file);
       }
       
@@ -507,8 +507,6 @@ int main(int argc, char **argv) {
   if (ret == -1) {
     mkdir(music_dir, 16877);
   }
-
-  puts(getenv("PATH"));
  
   for (;;) {
     SDL_Event e;
