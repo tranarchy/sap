@@ -30,7 +30,7 @@ When `sap` is ran without arguments it will search for audio files in `$HOME/Mus
 
 `sap [dir ...]` is going to add all given dirs and it's sub dirs to the file selection window
 
-When you drag and drop an audio file into `sap` it will add it to the queue
+You can drag and drop audio files and directories into sap
 
 ## Controls
 
@@ -44,6 +44,6 @@ When you drag and drop an audio file into `sap` it will add it to the queue
 - UP ARROW - increase volume
 - DOWN ARROW - decrease volume
 
-Middle clicking on entries in the queue will delete them
+Middle clicking on entries in the queue will delete them from the queue
 
 Right clicking on a dropped down dir in the File selection window will add the entire dir's content to the queue

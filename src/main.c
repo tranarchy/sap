@@ -20,6 +20,9 @@ static char **_argv;
 
 static char music_dir[1024];
 
+static char **drag_and_drop_dirs;
+static int drag_and_drop_count = 0;
+
 static Mix_Music *music = NULL;
 static float music_pos = 0;
 static unsigned char volume = MIX_MAX_VOLUME;
@@ -356,6 +359,10 @@ static void files_window(mu_Context *ctx) {
       realpath(_argv[i], path);
       get_tracks(ctx, path);
     }
+
+    for (int i = 0; i < drag_and_drop_count; i++) {
+      get_tracks(ctx, drag_and_drop_dirs[i]);
+    }
     
     mu_end_window(ctx);
   }
@@ -507,6 +514,8 @@ int main(int argc, char **argv) {
   if (ret == -1) {
     mkdir(music_dir, 16877);
   }
+
+  drag_and_drop_dirs = malloc(sizeof(char*));
  
   for (;;) {
     SDL_Event e;
@@ -514,6 +523,12 @@ int main(int argc, char **argv) {
       switch (e.type) {
         case SDL_QUIT:
           free(ctx);
+
+          for (int i = 0; i < drag_and_drop_count; i++) {
+            free(drag_and_drop_dirs[i]);
+          }
+          
+          free(drag_and_drop_dirs);
           exit(EXIT_SUCCESS); 
           break;
         case SDL_MOUSEMOTION: mu_input_mousemove(ctx, e.motion.x, e.motion.y); break;
@@ -545,6 +560,13 @@ int main(int argc, char **argv) {
           
           if (S_ISREG(source_stat.st_mode)) {
             add_to_queue(e.drop.file);
+          } else if (S_ISDIR(source_stat.st_mode)) {
+            drag_and_drop_count++;
+            
+            drag_and_drop_dirs = reallocarray(drag_and_drop_dirs, drag_and_drop_count, sizeof(char *));
+            drag_and_drop_dirs[drag_and_drop_count - 1] = malloc((strlen(e.drop.file) + 1) * sizeof(char));
+                        
+            strlcpy(drag_and_drop_dirs[drag_and_drop_count - 1], e.drop.file, strlen(e.drop.file) + 1);
           }
           
           SDL_free(e.drop.file);
