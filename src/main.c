@@ -86,11 +86,11 @@ static void music_hook(void *udata, Uint8 *stream, int len) {
 
 static int text_width(mu_Font font, const char *text, int len) {
   if (len == -1) { len = strlen(text); }
-  return gl_get_text_width(text, len);
+  return sdlr_get_text_width(text, len);
 }
 
 static int text_height(mu_Font font) {
-  return gl_get_text_height();
+  return sdlr_get_text_height();
 }
 
 static char *strip_file(char *entry) {
@@ -481,7 +481,7 @@ int main(int argc, char **argv) {
   Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
   Mix_HookMusicFinished(music_finished);
   Mix_SetPostMix(music_hook, NULL);
-  gl_init();
+  sdlr_init();
 
   mu_Context *ctx = malloc(sizeof(mu_Context));
   mu_init(ctx);
@@ -576,17 +576,17 @@ int main(int argc, char **argv) {
 
     process_frame(ctx);
 
-    gl_clear(mu_color(10, 10, 23, 255));
+    sdlr_clear(mu_color(10, 10, 23, 255));
     mu_Command *cmd = NULL;
     while (mu_next_command(ctx, &cmd)) {
       switch (cmd->type) {
-        case MU_COMMAND_TEXT: gl_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
-        case MU_COMMAND_RECT: gl_draw_rect(cmd->rect.rect, cmd->rect.color); break;
-        case MU_COMMAND_ICON: gl_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
-        case MU_COMMAND_CLIP: gl_set_clip_rect(cmd->clip.rect); break;
+        case MU_COMMAND_TEXT: sdlr_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
+        case MU_COMMAND_RECT: sdlr_draw_rect(cmd->rect.rect, cmd->rect.color); break;
+        case MU_COMMAND_ICON: sdlr_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
+        case MU_COMMAND_CLIP: sdlr_set_clip_rect(cmd->clip.rect); break;
       }
     }
-    gl_present();
+    sdlr_present();
   }
 
   return 0;

@@ -1,43 +1,36 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
-#include <glad.h>
 #include <microui.h>
 
 #include "atlas.h"
 
 #define BUFFER_SIZE 16384
 
-static GLfloat   tex_buf[BUFFER_SIZE *  8];
-static GLfloat  vert_buf[BUFFER_SIZE *  8];
-static GLubyte color_buf[BUFFER_SIZE * 16];
-static GLuint  index_buf[BUFFER_SIZE *  6];
+static float         tex_buf[BUFFER_SIZE *  8];
+static float         vert_buf[BUFFER_SIZE *  8];
+static unsigned char color_buf[BUFFER_SIZE * 16];
+static int           index_buf[BUFFER_SIZE *  6];
 
 static SDL_Window *window;
+
+static SDL_Texture *texture;
+static SDL_Renderer *renderer;
 
 static int height, width;
 
 static int buf_idx;
 
-void gl_init(void) {
+void sdlr_init(void) {
    window = SDL_CreateWindow(
     "sap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-    800, 700, SDL_WINDOW_OPENGL);
-  SDL_GL_CreateContext(window);
+    800, 700, SDL_WINDOW_SHOWN);
 
-  gladLoadGL();
+  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, ATLAS_WIDTH, ATLAS_HEIGHT);
 
-  /* init gl */
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_TEXTURE_2D);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
-
-  GLubyte byte_texture[ATLAS_HEIGHT][ATLAS_WIDTH];
-
-  GLubyte rgba_texture[ATLAS_WIDTH * ATLAS_HEIGHT * 4];
+  unsigned char rgba_texture[ATLAS_WIDTH * ATLAS_HEIGHT * 4];
+  unsigned char byte_texture[ATLAS_HEIGHT][ATLAS_WIDTH];
 
 	for(int i = 0; i < ATLAS_HEIGHT; i++) {
     for(int j = 0; j < ATLAS_WIDTH; j++) {
@@ -45,7 +38,7 @@ void gl_init(void) {
     }
   }
 
-  GLuint r, g, b, a;
+  unsigned char r, g, b, a;
 	int rgba_index = 0;
 
 	for(int i = 0; i < ATLAS_HEIGHT; i++) {
@@ -76,7 +69,7 @@ void gl_init(void) {
 
   for(int i = 0; i < ATLAS_HEIGHT; i++) {
     for(int j = 0; j < ATLAS_WIDTH; j++) {
-      GLubyte atlas_cur = byte_texture[i][j];
+      unsigned char atlas_cur = byte_texture[i][j];
 
 			if (atlas_cur == 1) {
 				r = 255;
@@ -102,49 +95,46 @@ void gl_init(void) {
     }
   }
 
-  GLuint id;
-  glGenTextures(1, &id);
-  glBindTexture(GL_TEXTURE_2D, id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ATLAS_WIDTH, ATLAS_HEIGHT, 0,
-    GL_RGBA, GL_UNSIGNED_BYTE, rgba_texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  SDL_UpdateTexture(texture, NULL, rgba_texture, 4 * ATLAS_WIDTH);
+  SDL_RenderSetVSync(renderer, 1);
+
+  SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+ 
 }
 
-void gl_flush(void) {
+void sdlr_flush(void) {
   if (buf_idx == 0) { return; }
 
   SDL_GetWindowSize(window, &width, &height);
+  SDL_Rect viewport = {0, 0, width, height};
+  SDL_RenderSetViewport(renderer, &viewport);
 
-  glViewport(0, 0, width, height);
+  int xy_stride = 2 * sizeof(float);
+  float *xy = vert_buf;
 
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glOrtho(0.0f, width, height, 0.0f, -1.0f, +1.0f);
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+  int uv_stride = 2 * sizeof(float);
+  float *uv = tex_buf;
 
-  glTexCoordPointer(2, GL_FLOAT, 0, tex_buf);
-  glVertexPointer(2, GL_FLOAT, 0, vert_buf);
-  glColorPointer(4, GL_UNSIGNED_BYTE, 0, color_buf);
+  int col_stride = 4 * sizeof(uint8_t);
+  SDL_Color *color = (SDL_Color*)color_buf;
 
-  glDrawElements(GL_TRIANGLES, buf_idx * 6, GL_UNSIGNED_INT, index_buf);
+  SDL_RenderGeometryRaw(renderer, texture,
+          xy, xy_stride, color,
+          col_stride,
+          uv, uv_stride,
+          buf_idx * 4,
+          index_buf, buf_idx * 6, sizeof (int));
 
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
+  SDL_RenderPresent(renderer);
 
   buf_idx = 0;
 }
 
 static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
-  if (buf_idx == BUFFER_SIZE) { gl_flush(); }
+  if (buf_idx == BUFFER_SIZE) { sdlr_flush(); }
   
   int texvert_idx = buf_idx *  8;
-  int   color_idx = buf_idx * 16;
+  int   color_idx = buf_idx * 4 * sizeof(mu_Color);
   int element_idx = buf_idx *  4;
   int   index_idx = buf_idx *  6;
   buf_idx++;
@@ -174,10 +164,10 @@ static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
   vert_buf[texvert_idx + 7] = dst.y + dst.h;
 
   /* update color buffer */
-  memcpy(color_buf + color_idx +  0, &color, 4);
-  memcpy(color_buf + color_idx +  4, &color, 4);
-  memcpy(color_buf + color_idx +  8, &color, 4);
-  memcpy(color_buf + color_idx + 12, &color, 4);
+  memcpy(color_buf + (color_idx + 0 * sizeof(mu_Color)), &color, sizeof(mu_Color));
+  memcpy(color_buf + (color_idx + 1 * sizeof(mu_Color)), &color, sizeof(mu_Color));
+  memcpy(color_buf + (color_idx + 2 * sizeof(mu_Color)), &color, sizeof(mu_Color));
+  memcpy(color_buf + (color_idx + 3 * sizeof(mu_Color)), &color, sizeof(mu_Color));
 
   /* update index buffer */
   index_buf[index_idx++] = element_idx + 0;
@@ -188,7 +178,7 @@ static void push_quad(mu_Rect dst, mu_Rect src, mu_Color color) {
   index_buf[index_idx++] = element_idx + 1;
 }
 
-int gl_get_text_width(const char *text, int len) {
+int sdlr_get_text_width(const char *text, int len) {
   int res = 0;
   for (const char *p = text; *p && len--; p++) {
     if ((*p & 0xc0) == 0x80) { continue; }
@@ -198,22 +188,22 @@ int gl_get_text_width(const char *text, int len) {
   return res;
 }
 
-int gl_get_text_height(void) {
+int sdlr_get_text_height(void) {
   return 18;
 }
 
-void gl_draw_rect(mu_Rect rect, mu_Color color) {
+void sdlr_draw_rect(mu_Rect rect, mu_Color color) {
   push_quad(rect, atlas[ATLAS_WHITE], color);
 }
 
-void gl_draw_icon(int id, mu_Rect rect, mu_Color color) {
+void sdlr_draw_icon(int id, mu_Rect rect, mu_Color color) {
   mu_Rect src = atlas[id];
   int x = rect.x + (rect.w - src.w) / 2;
   int y = rect.y + (rect.h - src.h) / 2;
   push_quad(mu_rect(x, y, src.w, src.h), src, color);
 }
 
-void gl_draw_text(const char *text, mu_Vec2 pos, mu_Color color) {
+void sdlr_draw_text(const char *text, mu_Vec2 pos, mu_Color color) {
   mu_Rect dst = { pos.x, pos.y, 0, 0 };
   for (const char *p = text; *p; p++) {
     if ((*p & 0xc0) == 0x80) { continue; }
@@ -226,18 +216,16 @@ void gl_draw_text(const char *text, mu_Vec2 pos, mu_Color color) {
   }
 }
 
-void gl_set_clip_rect(mu_Rect rect) {
-  gl_flush();
-  glScissor(rect.x, height - (rect.y + rect.h), rect.w, rect.h);
+void sdlr_set_clip_rect(mu_Rect rect) {
+  SDL_Rect clip_rect = { rect.x, height - (rect.y + rect.h), rect.w, rect.h };
+  SDL_RenderSetClipRect(renderer, &clip_rect);
 }
 
-void gl_clear(mu_Color clr) {
-  gl_flush();
-  glClearColor(clr.r / 255., clr.g / 255., clr.b / 255., clr.a / 255.);
-  glClear(GL_COLOR_BUFFER_BIT);
+void sdlr_clear(mu_Color clr) {
+  SDL_SetRenderDrawColor(renderer, clr.r, clr.g, clr.b, clr.a);
+  SDL_RenderClear(renderer);
 }
 
-void gl_present(void) {
-  gl_flush();
-  SDL_GL_SwapWindow(window);
+void sdlr_present(void) {
+  sdlr_flush();
 }
