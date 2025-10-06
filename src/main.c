@@ -529,6 +529,8 @@ int main(int argc, char **argv) {
           }
           
           free(drag_and_drop_dirs);
+
+          Mix_FreeMusic(music);
           exit(EXIT_SUCCESS); 
           break;
         case SDL_MOUSEMOTION: mu_input_mousemove(ctx, e.motion.x, e.motion.y); break;
