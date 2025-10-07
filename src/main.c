@@ -410,6 +410,50 @@ static void queue_window(mu_Context *ctx) {
   }
 }
 
+static void download_window(mu_Context *ctx) {
+   if (mu_begin_window(ctx, "Download", mu_rect(460, 520, 200, 55))) {
+   
+      static char url[1024];
+      
+      mu_layout_row(ctx, 1, (int[]) { -1 }, 0);
+      
+      if (mu_textbox(ctx, url, sizeof(url)) & MU_RES_SUBMIT) {
+        mu_set_focus(ctx, ctx->last_id);
+
+        if (strlen(url) > 0) {
+          pid_t pid = fork();
+    
+          if (pid == 0) {
+
+            chdir(music_dir);
+
+            char *argv[] = {
+              "yt-dlp",
+              "-x",
+              url,
+              "-o",
+              "%(title)s.%(ext)s",
+              NULL
+            };
+            
+            execvp("yt-dlp", argv);
+            
+            exit(0);
+          }
+        
+          url[0] = '\0';
+        }
+      }
+
+      if (ctx->key_down == (MU_KEY_CTRL | MU_KEY_V) && ctx->key_pressed == MU_KEY_V) {
+        const char *clipboard = SDL_GetClipboardText();
+        strlcpy(url + strlen(url), clipboard, strlen(clipboard) + 1);
+      }
+
+      mu_end_window(ctx);
+   }
+}
+
 static int uint8_slider(mu_Context *ctx, unsigned char *value, int low, int high) {
   static float tmp;
   mu_push_id(ctx, &value, sizeof(value));
@@ -421,7 +465,7 @@ static int uint8_slider(mu_Context *ctx, unsigned char *value, int low, int high
 }
 
 static void settings_window(mu_Context *ctx) {
-  if (mu_begin_window_ex(ctx, "Settings", mu_rect(273, 490, 241, 168), MU_OPT_NOCLOSE)) {
+  if (mu_begin_window_ex(ctx, "Settings", mu_rect(100, 470, 241, 168), MU_OPT_NOCLOSE)) {
     mu_layout_row(ctx, 2, (int[]) { 70, 150 }, 0);
     mu_label(ctx, "Volume");
 
@@ -452,6 +496,7 @@ static void process_frame(mu_Context *ctx) {
   files_window(ctx);
   queue_window(ctx);
   settings_window(ctx);
+  download_window(ctx);
   mu_end(ctx);
 }
 
@@ -472,6 +517,8 @@ static const short key_map[256] = {
   [ SDLK_LEFT         & 0xff ] = MU_KEY_LEFT,
   [ SDLK_UP           & 0xff ] = MU_KEY_UP,
   [ SDLK_DOWN         & 0xff ] = MU_KEY_DOWN,
+  [ SDLK_RETURN       & 0xff ] = MU_KEY_RETURN,
+  [ SDLK_v            & 0xff ] = MU_KEY_V,
 };
 
 int main(int argc, char **argv) {
@@ -535,7 +582,7 @@ int main(int argc, char **argv) {
           break;
         case SDL_MOUSEMOTION: mu_input_mousemove(ctx, e.motion.x, e.motion.y); break;
         case SDL_MOUSEWHEEL: mu_input_scroll(ctx, 0, e.wheel.y * -30); break;
-        //case SDL_TEXTINPUT: mu_input_text(ctx, e.text.text); break;
+        case SDL_TEXTINPUT: mu_input_text(ctx, e.text.text); break;
 
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP: {

@@ -108,6 +108,7 @@ enum {
   MU_KEY_RIGHT        = (1 << 7),
   MU_KEY_UP           = (1 << 8),
   MU_KEY_DOWN         = (1 << 9),
+  MU_KEY_V            = (1 << 10)
 };
 
 
