@@ -1,18 +1,20 @@
 # sap
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/667d2d2d-e0e6-4f12-adab-115624e289d1" />
+  <img src="https://github.com/user-attachments/assets/e60e5b01-cad7-4acc-9f55-7423f0d5f5f2" />
 </p>
 
-<p align="center">simple audio player and visualizer</p>
+<p align="center">simple audio player capable of visualizing and downloading audio files</p>
 
-## Build-time dependencies
+## Dependencies
 - C compiler
 - pkg-config
 - sdl2-dev
 - sdl2_mixer-dev
 
 You might need to download additional packages for decoding audio files (e.g., `opusfile`)
+
+For audio downloads, you will need to have `yt-dlp` installed
 
 ## Installing
 ```
