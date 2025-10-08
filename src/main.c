@@ -445,7 +445,9 @@ static void download_window(mu_Context *ctx) {
         }
       }
 
-      if (ctx->key_down == (MU_KEY_CTRL | MU_KEY_V) && ctx->key_pressed == MU_KEY_V) {
+      if (ctx->focus == ctx->last_id && 
+      ctx->key_down == (MU_KEY_CTRL | MU_KEY_V) && 
+      ctx->key_pressed == MU_KEY_V) {
         const char *clipboard = SDL_GetClipboardText();
         strlcpy(url + strlen(url), clipboard, strlen(clipboard) + 1);
       }
